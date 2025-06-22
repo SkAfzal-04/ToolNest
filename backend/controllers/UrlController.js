@@ -13,7 +13,9 @@ export const createShortUrl = async (req, res) => {
 
   try {
     await newUrl.save();
-    res.json({ shortUrl: `http://localhost:3000/shorten/${shortCode}` });
+    res.json({
+      shortUrl: `https://toolnest-t568.onrender.com/shorten/${shortCode}` // ✅ fixed
+    });
   } catch (err) {
     res.status(500).json({ error: 'Failed to shorten URL' });
   }
