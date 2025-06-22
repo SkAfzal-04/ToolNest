@@ -1,7 +1,8 @@
 {
   "build": {
     "env": {
-      "NODE_VERSION": "20"
+      "NODE_ENV": "production",
+      "SWC_BINARY_TARGET": "node-linux-x64-gnu"
     }
   }
 }
