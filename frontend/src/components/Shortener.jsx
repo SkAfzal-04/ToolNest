@@ -1,12 +1,13 @@
 import { useState } from "react";
 
 export default function Shortener() {
+  const backendUrl = import.meta.env.VITE_BACKEND_URL; // ✅ Corrected line
   const [originalUrl, setOriginalUrl] = useState("");
   const [shortUrl, setShortUrl] = useState("");
 
   const handleShorten = async () => {
     if (!originalUrl.trim()) return;
-    const res = await fetch("https://toolnest-t568.onrender.com/shorten/short", {
+    const res = await fetch(`${backendUrl}/shorten/short`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ originalUrl }),

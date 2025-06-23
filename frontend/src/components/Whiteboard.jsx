@@ -1,9 +1,11 @@
-import React, { useRef, useState, useEffect, useCallback } from "react";
-import { Button } from "./Button";
+import React, { useRef, useState, useEffect } from "react";
 import io from "socket.io-client";
-import { Eraser, Trash2, Paintbrush } from "lucide-react";
+import { Button } from "./Button";
+import { Eraser, Trash2 } from "lucide-react";
 
-const socket = io("https://toolnest-t568.onrender.com"); // Adjust to match backend
+// ✅ Use correct Vite env variable
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
+const socket = io(`${backendUrl}`);
 
 const colors = [
   "#000000", "#FFFFFF", "#FF0000", "#00FF00", "#0000FF",
@@ -20,85 +22,68 @@ export default function Whiteboard() {
   const [brushSize, setBrushSize] = useState(3);
   const [theme, setTheme] = useState("light");
 
-  const getCanvasContext = () => canvasRef.current?.getContext("2d");
+  const getContext = () => canvasRef.current?.getContext("2d");
 
-  const getMousePos = (e) => {
+  const getPointerPos = (e) => {
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     return {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
+      x: clientX - rect.left,
+      y: clientY - rect.top
     };
   };
 
-  const getBackgroundColor = () => (theme === "dark" ? "#1a1a1a" : "#FFFFFF");
+  const getBgColor = () => (theme === "dark" ? "#1a1a1a" : "#FFFFFF");
 
   const startDrawing = (e) => {
-    const ctx = getCanvasContext();
+    e.preventDefault();
+    const ctx = getContext();
     if (!ctx) return;
-
-    const pos = getMousePos(e);
+    const pos = getPointerPos(e);
     setIsDrawing(true);
-
     ctx.beginPath();
     ctx.moveTo(pos.x, pos.y);
     ctx.strokeStyle = currentColor;
     ctx.lineWidth = brushSize;
     ctx.lineCap = "round";
-
-    socket.emit("start", {
-      x: pos.x,
-      y: pos.y,
-      color: currentColor,
-      size: brushSize,
-    });
+    socket.emit("start", { x: pos.x, y: pos.y, color: currentColor, size: brushSize });
   };
 
   const draw = (e) => {
     if (!isDrawing) return;
-    const ctx = getCanvasContext();
+    e.preventDefault();
+    const ctx = getContext();
     if (!ctx) return;
-
-    const pos = getMousePos(e);
+    const pos = getPointerPos(e);
     ctx.lineTo(pos.x, pos.y);
     ctx.stroke();
-
-    socket.emit("draw", {
-      x: pos.x,
-      y: pos.y,
-      color: currentColor,
-    });
+    socket.emit("draw", { x: pos.x, y: pos.y, color: currentColor });
   };
 
-  const stopDrawing = () => {
+  const stopDrawing = (e) => {
+    if (!isDrawing) return;
+    e.preventDefault();
     setIsDrawing(false);
-    const ctx = getCanvasContext();
-    ctx?.beginPath(); // Reset path to prevent connecting lines
+    getContext()?.beginPath();
     socket.emit("stop");
   };
 
-  const handleColorChange = (color) => {
-    const bgColor = getBackgroundColor();
-    const selectedColor = color === "#FFFFFF" ? bgColor : color;
-    setCurrentColor(selectedColor);
-    socket.emit("colorChange", selectedColor);
-  };
-
-  const handleBrushSizeChange = (e) => {
-    const size = parseInt(e.target.value);
-    setBrushSize(size);
-    socket.emit("brushSizeChange", size);
-  };
-
   const clearCanvas = () => {
-    const ctx = getCanvasContext();
+    const ctx = getContext();
     if (!ctx) return;
-
     ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-    ctx.fillStyle = getBackgroundColor();
+    ctx.fillStyle = getBgColor();
     ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-
     socket.emit("clear", { theme });
+  };
+
+  const handleColorChange = (color) => {
+    const bg = getBgColor();
+    const finalColor = color === "#FFFFFF" ? bg : color;
+    setCurrentColor(finalColor);
+    socket.emit("colorChange", finalColor);
   };
 
   useEffect(() => {
@@ -106,12 +91,12 @@ export default function Whiteboard() {
     canvas.width = 800;
     canvas.height = 600;
     const ctx = canvas.getContext("2d");
-    ctx.fillStyle = getBackgroundColor();
+    ctx.fillStyle = getBgColor();
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }, [theme]);
 
   useEffect(() => {
-    const ctx = getCanvasContext();
+    const ctx = getContext();
     if (!ctx) return;
 
     const onStart = ({ x, y, color, size }) => {
@@ -129,7 +114,7 @@ export default function Whiteboard() {
     };
 
     const onStop = () => {
-      ctx.beginPath(); // Prevent connecting lines
+      ctx.beginPath();
     };
 
     const onClear = ({ theme }) => {
@@ -167,7 +152,7 @@ export default function Whiteboard() {
 
         <div className="flex items-center gap-4 mb-4 p-4 rounded-lg shadow-md bg-white dark:bg-gray-800">
           <label className="text-sm font-medium">Brush Size:</label>
-          <input type="range" min="1" max="20" value={brushSize} onChange={handleBrushSizeChange} className="w-32" />
+          <input type="range" min="1" max="20" value={brushSize} onChange={(e) => setBrushSize(parseInt(e.target.value))} className="w-32" />
           <span className="text-sm w-8">{brushSize}px</span>
         </div>
 
@@ -191,7 +176,10 @@ export default function Whiteboard() {
               onMouseMove={draw}
               onMouseUp={stopDrawing}
               onMouseLeave={stopDrawing}
-              className="cursor-crosshair absolute top-0 left-0 rounded"
+              onTouchStart={startDrawing}
+              onTouchMove={draw}
+              onTouchEnd={stopDrawing}
+              className="cursor-crosshair absolute top-0 left-0 rounded touch-none"
             />
           </div>
         </div>

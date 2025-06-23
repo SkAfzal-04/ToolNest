@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 export default function YoutubeDownloader() {
+  const backendUrl = import.meta.env.VITE_BACKEND_URL; 
   const [link, setLink] = useState("");
   const [status, setStatus] = useState("");
 
@@ -8,7 +9,7 @@ export default function YoutubeDownloader() {
     if (!link.trim()) return;
     setStatus("Downloading...");
     const res = await fetch(
-      `https://toolnest-t568.onrender.com/youtube/download?url=${encodeURIComponent(link)}`
+      `${backendUrl}/youtube/download?url=${encodeURIComponent(link)}`
     );
 
     if (res.ok) {
