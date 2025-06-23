@@ -8,7 +8,7 @@ export default function YoutubeDownloader() {
     if (!link.trim()) return;
     setStatus("Downloading...");
     const res = await fetch(
-      `http://localhost:3000/youtube/download?url=${encodeURIComponent(link)}`
+      `https://toolnest-t568.onrender.com/youtube/download?url=${encodeURIComponent(link)}`
     );
 
     if (res.ok) {

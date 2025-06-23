@@ -3,7 +3,7 @@ import { Button } from "./Button";
 import io from "socket.io-client";
 import { Eraser, Trash2, Paintbrush } from "lucide-react";
 
-const socket = io("http://localhost:3000"); // Adjust to match backend
+const socket = io("https://toolnest-t568.onrender.com"); // Adjust to match backend
 
 const colors = [
   "#000000", "#FFFFFF", "#FF0000", "#00FF00", "#0000FF",
