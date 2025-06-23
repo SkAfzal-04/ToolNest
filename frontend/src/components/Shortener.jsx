@@ -6,7 +6,7 @@ export default function Shortener() {
 
   const handleShorten = async () => {
     if (!originalUrl.trim()) return;
-    const res = await fetch("http://localhost:3000/shorten/short", {
+    const res = await fetch("https://toolnest-t568.onrender.com/shorten/short", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ originalUrl }),
